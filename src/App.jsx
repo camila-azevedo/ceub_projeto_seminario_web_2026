@@ -100,6 +100,9 @@ function Icon({ name, size = 18 }) {
   if (name === 'clock') {
     return <svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
   }
+  if (name === 'lock') {
+    return <svg {...common}><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 4v3" /></svg>
+  }
   if (name === 'close') {
     return <svg {...common}><path d="m18 6-12 12M6 6l12 12" /></svg>
   }
@@ -113,9 +116,11 @@ function App() {
   const [selectedTime, setSelectedTime] = useState('')
   const [selectedSeats, setSelectedSeats] = useState([])
   const [step, setStep] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState('pix')
-  const [bookingComplete, setBookingComplete] = useState(false)
   const [location, setLocation] = useState('Shopping Pátio Brasil')
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [loginMode, setLoginMode] = useState('login')
+  const [loginMessage, setLoginMessage] = useState('')
+  const [passwordVisible, setPasswordVisible] = useState(false)
 
   const visibleMovies = useMemo(
     () =>
@@ -153,10 +158,40 @@ function App() {
     setSelectedTime('')
     setSelectedSeats([])
     setStep(0)
-    setBookingComplete(false)
   }
 
   const closeBooking = () => setSelectedMovie(null)
+  const openLogin = () => {
+    setLoginOpen(true)
+    setLoginMode('login')
+    setLoginMessage('')
+    setPasswordVisible(false)
+  }
+  const changeLoginMode = (mode) => {
+    setLoginMode(mode)
+    setLoginMessage('')
+    setPasswordVisible(false)
+  }
+  const handleLoginSubmit = (event) => {
+    event.preventDefault()
+
+    if (loginMode === 'register') {
+      const formData = new FormData(event.currentTarget)
+      if (formData.get('password') !== formData.get('confirmPassword')) {
+        setLoginMessage('As senhas não coincidem. Confira os campos e tente novamente.')
+        return
+      }
+      setLoginMessage('O cadastro seguro ainda não está integrado. Nenhum dado foi enviado ou salvo.')
+      return
+    }
+
+    if (loginMode === 'forgot') {
+      setLoginMessage('A recuperação de senha ainda não está integrada. Nenhum e-mail foi enviado.')
+      return
+    }
+
+    setLoginMessage('A autenticação ainda não está conectada. Seus dados não foram enviados nem salvos.')
+  }
   const toggleSeat = (seat) => {
     setSelectedSeats((current) =>
       current.includes(seat)
@@ -189,7 +224,7 @@ function App() {
               <option>ParkShopping</option>
             </select>
           </label>
-          <a className="my-tickets" href="#filmes"><Icon name="ticket" size={17} /> Meus ingressos</a>
+          <button type="button" className="my-tickets" onClick={openLogin}><Icon name="ticket" size={17} /> Meus ingressos</button>
           <button className="mobile-menu" type="button" aria-label="Abrir menu"><Icon name="menu" size={22} /></button>
         </div>
       </header>
@@ -257,7 +292,46 @@ function App() {
           </div>
         </section>
 
-        <section className="experience-strip" id="sobre">
+        <section className="about-section" id="sobre">
+          <div className="about-copy">
+            <span className="section-kicker">SOBRE A POLTRONA · NOSSA ORIGEM</span>
+            <h2>Uma noite chuvosa, um guardanapo e uma poltrona impossível de achar<span>.</span></h2>
+            <p>
+              Diz a história que tudo começou numa terça-feira de chuva em Brasília. Três amigos
+              chegaram juntos para uma sessão lotada — e descobriram que “juntos” significava
+              dois lugares num corredor e o terceiro do outro lado da sala.
+            </p>
+            <p>
+              Na tentativa de reunir a turma, alguém rabiscou o mapa do cinema no verso de um
+              guardanapo. O desenho ganhou fileiras, setas, lugares livres e, por algum motivo,
+              uma poltrona com uma perna a mais. No dia seguinte, o rabisco virou uma planilha;
+              depois, um protótipo.
+            </p>
+            <p>
+              A Poltrona nasceu para deixar essa parte fácil: escolher o filme, a sessão e o
+              assento antes de sair de casa. A poltrona de cinco pernas ficou só no desenho.
+            </p>
+            <a href="#filmes" className="about-link">Encontrar meu lugar <Icon name="arrow" size={16} /></a>
+          </div>
+          <aside className="origin-card" aria-label="O primeiro mapa de assentos da Poltrona">
+            <div className="origin-card-top"><span>ARQUIVO POLTRONA</span><span>RASCUNHO Nº 001</span></div>
+            <div className="origin-ticket">
+              <span className="origin-ticket-kicker">MAPA DA SESSÃO</span>
+              <span className="origin-ticket-title">A missão: sentar<br />todo mundo junto.</span>
+              <div className="origin-screen">TELA</div>
+              <div className="origin-seat-map" aria-hidden="true">
+                {['livre', 'livre', 'ocupado', 'livre', 'livre', 'livre', 'ocupado', 'extra', 'livre', 'livre', 'livre', 'livre'].map((seat, index) => (
+                  <span className={`sketch-seat sketch-seat-${seat}`} key={`${seat}-${index}`} />
+                ))}
+              </div>
+              <span className="origin-ticket-caption">BRASÍLIA · TERÇA-FEIRA CHUVOSA</span>
+            </div>
+            <span className="origin-stamp">ACHADO NO BOLSO<br />DEPOIS DO FILME</span>
+            <span className="origin-card-foot">Um rabisco. Três amigos. Uma ideia.</span>
+          </aside>
+        </section>
+
+        <section className="experience-strip" id="ingressos">
           <div className="experience-icon">✦</div>
           <div><span className="section-kicker">MAIS DO QUE UM INGRESSO</span><h2>O cinema fica melhor<br className="mobile-break" /> quando é do seu jeito.</h2></div>
           <p>Escolha seu lugar favorito, pague em poucos passos e deixe a pipoca por nossa conta. Sua próxima história começa aqui.</p>
@@ -277,17 +351,7 @@ function App() {
         }}>
           <section className="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-title">
             <button type="button" className="modal-close" onClick={closeBooking} aria-label="Fechar"><Icon name="close" size={21} /></button>
-            {bookingComplete ? (
-              <div className="booking-success">
-                <div className="success-check">✓</div>
-                <span className="section-kicker">TUDO CERTO!</span>
-                <h2>Compra<br />simulada<span>.</span></h2>
-                <p>Simulação para <strong>{selectedMovie.title}</strong><br />{sessionDates[selectedDate].label} às {selectedTime} · Poltrona {selectedSeats.join(', ')}<br />Nenhum pagamento foi processado.</p>
-                <div className="success-ticket"><Icon name="ticket" size={20} /><span>Resumo da simulação exibido nesta tela</span></div>
-                <button type="button" className="button button-primary success-button" onClick={closeBooking}>Voltar aos filmes</button>
-              </div>
-            ) : (
-              <>
+            <>
                 <div className="booking-topline">
                   <span className="section-kicker">GARANTA SEU LUGAR</span>
                   <span className="step-count">0{step + 1} <span>/ 03</span></span>
@@ -338,33 +402,79 @@ function App() {
                 )}
 
                 {step === 2 && (
-                  <form className="booking-content payment-content" onSubmit={(event) => { event.preventDefault(); setBookingComplete(true) }}>
+                  <div className="booking-content payment-content">
                     <div className="order-summary">
                       <div><span>{selectedSeats.length} ingresso{selectedSeats.length === 1 ? '' : 's'} · {selectedSeats.join(', ')}</span><strong>R$ {total.toFixed(2).replace('.', ',')}</strong></div>
                       <div><span>Taxa de serviço</span><strong>R$ 4,50</strong></div>
                       <div className="order-total"><span>Total</span><strong>R$ {(total + 4.5).toFixed(2).replace('.', ',')}</strong></div>
                     </div>
-                    <h3>Forma de pagamento</h3>
-                    <div className="payment-options">
-                      <button type="button" className={`payment-option ${paymentMethod === 'pix' ? 'option-selected' : ''}`} onClick={() => setPaymentMethod('pix')}><span className="payment-symbol">◇</span><span><strong>Pix</strong><small>Aprovação imediata</small></span><i /></button>
-                      <button type="button" className={`payment-option ${paymentMethod === 'card' ? 'option-selected' : ''}`} onClick={() => setPaymentMethod('card')}><span className="payment-symbol">▤</span><span><strong>Cartão</strong><small>Crédito ou débito</small></span><i /></button>
+                    <div className="checkout-locked">
+                      <span className="checkout-lock-icon"><Icon name="lock" size={22} /></span>
+                      <h3>Pagamento protegido</h3>
+                      <p>Para liberar pagamentos, precisamos conectar uma autenticação segura ao servidor. Esta versão ainda não valida contas nem processa cobranças.</p>
+                      <button type="button" className="button button-primary login-trigger" onClick={openLogin}>Abrir tela de login <Icon name="arrow" size={16} /></button>
                     </div>
-                    {paymentMethod === 'card' && <label className="card-field">Número do cartão<input type="text" inputMode="numeric" placeholder="0000 0000 0000 0000" maxLength="19" required /></label>}
-                    <label className="email-field">E-mail para receber o ingresso<input type="email" placeholder="voce@email.com" required /></label>
-                    <p className="secure-note">Demonstração de checkout: nenhum pagamento será processado.</p>
-                    <button className="button button-primary pay-button" type="submit">Pagar R$ {(total + 4.5).toFixed(2).replace('.', ',')} <Icon name="arrow" size={17} /></button>
-                  </form>
-                )}
-
-                {!bookingComplete && (
-                  <div className="modal-footer">
-                    {step > 0 && <button type="button" className="back-button" onClick={() => setStep(step - 1)}>Voltar</button>}
-                    <span className="price-preview">{step < 2 && selectedSeats.length > 0 ? `R$ ${total.toFixed(2).replace('.', ',')}` : step === 1 ? 'R$ 38,00 / ingresso' : ''}</span>
-                    {step < 2 && <button type="button" className="button button-primary continue-button" disabled={step === 0 ? !selectedTime : selectedSeats.length === 0} onClick={() => setStep(step + 1)}>{step === 0 ? 'Escolher assentos' : 'Continuar'} <Icon name="arrow" size={16} /></button>}
                   </div>
                 )}
-              </>
-            )}
+
+                <div className="modal-footer">
+                  {step > 0 && <button type="button" className="back-button" onClick={() => setStep(step - 1)}>Voltar</button>}
+                  <span className="price-preview">{step < 2 && selectedSeats.length > 0 ? `R$ ${total.toFixed(2).replace('.', ',')}` : step === 1 ? 'R$ 38,00 / ingresso' : ''}</span>
+                  {step < 2 && <button type="button" className="button button-primary continue-button" disabled={step === 0 ? !selectedTime : selectedSeats.length === 0} onClick={() => setStep(step + 1)}>{step === 0 ? 'Escolher assentos' : 'Continuar'} <Icon name="arrow" size={16} /></button>}
+                </div>
+            </>
+          </section>
+        </div>
+      )}
+      {loginOpen && (
+        <div className="modal-backdrop login-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setLoginOpen(false)
+        }}>
+          <section className="login-modal" role="dialog" aria-modal="true" aria-labelledby="login-title">
+            <button type="button" className="modal-close" onClick={() => setLoginOpen(false)} aria-label="Fechar login"><Icon name="close" size={21} /></button>
+            <div className="login-brand"><span className="brand-mark"><span /></span><span>poltrona<span className="brand-dot">.</span></span></div>
+            <span className="section-kicker">{loginMode === 'forgot' ? 'RECUPERE SEU ACESSO' : loginMode === 'register' ? 'FAÇA PARTE DA POLTRONA' : 'SUA CONTA, SEU CINEMA'}</span>
+            <h2 id="login-title">{loginMode === 'forgot' ? <>Esqueceu a senha<span>?</span></> : loginMode === 'register' ? <>Crie sua conta<span>.</span></> : <>Entre na Poltrona<span>.</span></>}</h2>
+            <p className="login-intro">{loginMode === 'forgot' ? 'Vamos ajudar você a recuperar o acesso à sua conta.' : loginMode === 'register' ? 'Crie sua conta para guardar seus ingressos e preferências.' : 'Acesse seus ingressos e continue sua experiência.'}</p>
+            <form className="login-form" onSubmit={handleLoginSubmit}>
+              <label>E-mail
+                <input type="email" name="email" autoComplete="email" placeholder="voce@email.com" required />
+              </label>
+              {loginMode !== 'forgot' && (
+                <>
+                  <label>Senha
+                    <span className="password-field">
+                      <input type={passwordVisible ? 'text' : 'password'} name="password" autoComplete={loginMode === 'register' ? 'new-password' : 'current-password'} minLength="8" placeholder="Pelo menos 8 caracteres" required />
+                      {loginMode === 'login' && <button type="button" className="password-toggle" onClick={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? 'Ocultar' : 'Mostrar'}</button>}
+                    </span>
+                  </label>
+                  {loginMode === 'register' && (
+                    <label>Confirme sua senha
+                      <span className="password-field">
+                        <input type={passwordVisible ? 'text' : 'password'} name="confirmPassword" autoComplete="new-password" minLength="8" placeholder="Digite a senha novamente" required />
+                        <button type="button" className="password-toggle" onClick={() => setPasswordVisible((visible) => !visible)}>{passwordVisible ? 'Ocultar' : 'Mostrar'}</button>
+                      </span>
+                    </label>
+                  )}
+                  {loginMode === 'login' && (
+                    <div className="login-form-actions">
+                      <button type="button" className="login-text-button" onClick={() => changeLoginMode('forgot')}>Esqueci minha senha</button>
+                    </div>
+                  )}
+                </>
+              )}
+              <button className="button button-primary login-submit" type="submit">
+                {loginMode === 'forgot' ? 'Enviar link de recuperação' : loginMode === 'register' ? 'Criar conta' : 'Entrar'}
+                <Icon name="arrow" size={16} />
+              </button>
+            </form>
+            {loginMessage && <p className="login-message" role="status">{loginMessage}</p>}
+            <div className="login-security-note"><Icon name="lock" size={17} /><p><strong>Protótipo de interface.</strong> Não use uma senha real: este formulário não autentica, envia ou salva seus dados.</p></div>
+            <div className="login-mode-links">
+              {loginMode === 'login' && <p>Ainda não tem conta? <button type="button" className="login-text-button" onClick={() => changeLoginMode('register')}>Criar conta</button></p>}
+              {loginMode === 'register' && <p>Já tem conta? <button type="button" className="login-text-button" onClick={() => changeLoginMode('login')}>Entrar</button></p>}
+              {loginMode === 'forgot' && <p>Lembrou sua senha? <button type="button" className="login-text-button" onClick={() => changeLoginMode('login')}>Voltar para entrar</button></p>}
+            </div>
           </section>
         </div>
       )}
